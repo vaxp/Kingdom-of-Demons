@@ -1,0 +1,17 @@
+[Unit]
+Description=Venom Input Daemon - Keyboard Layout Manager
+Documentation=https://github.com/vaxp/venom-input
+# نربطه بالجلسة الرسومية، ليعمل فقط عند وجود واجهة
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/venom_shortcuts
+# نحذف Environment لأن خدمة المستخدم ترث الشاشة والـ D-Bus تلقائياً
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=graphical-session.target
+# أو يمكنك استخدام default.target لضمان التشغيل دائماً

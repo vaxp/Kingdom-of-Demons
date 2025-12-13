@@ -1,0 +1,13 @@
+[Unit]
+Description=Venom Basilisk - Spotlight-style Launcher
+Documentation=https://github.com/venom/venom_basilisk
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/venom_basilisk
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

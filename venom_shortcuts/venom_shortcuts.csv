@@ -1,0 +1,36 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# Venom Shortcuts Config
+# ═══════════════════════════════════════════════════════════════════════════
+# Format: Modifier, Key, Command
+# Modifiers: None, Ctrl, Alt, Shift, Super (can combine: Ctrl+Alt)
+# Special Commands: @mpris:playpause, @mpris:next, @mpris:previous, @mpris:stop
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Volume Control
+None,VolUp,/usr/bin/venom-audio-ctl up
+None,VolDown,/usr/bin/venom-audio-ctl down
+None,Mute,/usr/bin/venom-audio-ctl mute
+Ctrl,z,/usr/bin/venom-audio-ctl down
+Ctrl,x,/usr/bin/venom-audio-ctl up
+
+# Media Control (MPRIS D-Bus)
+None,Play,@mpris:playpause
+None,Next,@mpris:next
+None,Prev,@mpris:previous
+None,Stop,@mpris:stop
+
+# Applications
+Super,t,vater
+Super,f,vafile
+Super,Enter,vaxpsam
+Super,l,venom-fang
+
+# System
+Ctrl+Alt,Delete,vaxmanegar
+Alt,F4,vaxkill
+
+# Debug
+None,F1,notify-send "Help" "Venom Shortcuts Active"
+Ctrl,Esc,notify-send "Escape" "Pressed!"
+Super,v,dbus-send --session --print-reply --dest=org.venom.Clipboard /org/venom/Clipboard org.venom.Clipboard.Show
+Super,n,dbus-send --session --dest=org.venom.Basilisk /org/venom/Basilisk org.venom.Basilisk.Toggle

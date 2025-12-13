@@ -1,0 +1,14 @@
+[Unit]
+Description=Venom Shot Daemon - Screenshot & Screen Recording Service
+Documentation=https://github.com/vaxp/venom-shot
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/venom_shot
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=graphical-session.target
