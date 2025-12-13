@@ -1,15 +1,11 @@
-# ═══════════════════════════════════════════════════════════════════════════
-# 🔍 Venom Basilisk - Makefile
-# ═══════════════════════════════════════════════════════════════════════════
-
 CC = gcc
-CFLAGS = -Wall -Wextra -O2 $(shell pkg-config --cflags gtk+-3.0 gio-2.0)
+CFLAGS = -Wall -Wextra -O2 -Iinclude $(shell pkg-config --cflags gtk+-3.0 gio-2.0)
 LDFLAGS = $(shell pkg-config --libs gtk+-3.0 gio-2.0)
 
 TARGET = venom_basilisk
 
-SRCS = main.c window.c search.c commands.c ai_chat.c
-OBJS = $(SRCS:.c=.o)
+SRCS = $(wildcard src/*.c)
+OBJS = $(patsubst src/%.c, obj/%.o, $(SRCS))
 
 .PHONY: all clean install
 
@@ -19,18 +15,14 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 	$(CC) $(OBJS) -o $(TARGET) $(LDFLAGS)
 
-%.o: %.c
+obj/%.o: src/%.c | obj
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Dependencies
-main.o: main.c basilisk.h window.h search.h
-window.o: window.c window.h basilisk.h search.h commands.h
-search.o: search.c search.h basilisk.h window.h
-commands.o: commands.c commands.h basilisk.h window.h ai_chat.h
-ai_chat.o: ai_chat.c ai_chat.h basilisk.h
+obj:
+	mkdir -p obj
 
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -rf obj $(TARGET)
 	@echo "🧹 Cleaned."
 
 install: $(TARGET)

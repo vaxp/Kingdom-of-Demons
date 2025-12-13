@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  * 🔍 Venom Basilisk - Main Entry Point & D-Bus Server
  * ═══════════════════════════════════════════════════════════════════════════
- * Spotlight-style application launcher for Venom Desktop
+ * Venom Basilisk application launcher for Venom Desktop
  * Based on venom_clipboard structure
  * ═══════════════════════════════════════════════════════════════════════════
  */
