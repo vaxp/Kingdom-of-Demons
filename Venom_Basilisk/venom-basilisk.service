@@ -1,5 +1,5 @@
 [Unit]
-Description=Venom Basilisk - Spotlight-style Launcher
+Description=Venom Basilisk
 Documentation=https://github.com/venom/venom_basilisk
 After=graphical-session.target
 
