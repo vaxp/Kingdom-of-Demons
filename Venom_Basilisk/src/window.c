@@ -161,9 +161,33 @@ void window_init(void) {
     // IMPORTANT: Realize the window to keep GTK running
     gtk_widget_realize(state->window);
     
+    // Set override_redirect to bypass window manager
+    GdkWindow *gdk_win = gtk_widget_get_window(state->window);
+    if (gdk_win) {
+        gdk_window_set_override_redirect(gdk_win, TRUE);
+    }
+    
     state->visible = FALSE;
     state->results_scroll = NULL;
     state->results_box = NULL;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Keyboard Grab (delayed for D-Bus calls)
+// ═══════════════════════════════════════════════════════════════════════════
+
+static gboolean do_keyboard_grab(gpointer data) {
+    (void)data;
+    
+    GdkWindow *gdk_win = gtk_widget_get_window(state->window);
+    if (gdk_win && gtk_widget_get_visible(state->window)) {
+        GdkDisplay *display = gdk_window_get_display(gdk_win);
+        GdkSeat *seat = gdk_display_get_default_seat(display);
+        gdk_seat_grab(seat, gdk_win, GDK_SEAT_CAPABILITY_KEYBOARD, TRUE, NULL, NULL, NULL, NULL);
+        gtk_widget_grab_focus(state->search_entry);
+    }
+    
+    return FALSE; // Run only once
 }
 
 void window_show(void) {
@@ -182,13 +206,24 @@ void window_show(void) {
         gtk_window_move(GTK_WINDOW(state->window), x, y);
         gtk_widget_show_all(state->window);
         gtk_window_present(GTK_WINDOW(state->window));
-        gtk_widget_grab_focus(state->search_entry);
+        
+        // Delay keyboard grab to ensure window is mapped (fixes D-Bus Toggle)
+        g_idle_add(do_keyboard_grab, NULL);
+        
         state->visible = TRUE;
     }
 }
 
 void window_hide(void) {
     if (state->visible) {
+        // Ungrab keyboard before hiding
+        GdkWindow *gdk_win = gtk_widget_get_window(state->window);
+        if (gdk_win) {
+            GdkDisplay *display = gdk_window_get_display(gdk_win);
+            GdkSeat *seat = gdk_display_get_default_seat(display);
+            gdk_seat_ungrab(seat);
+        }
+        
         dropdown_hide();
         gtk_widget_hide(state->window);
         state->visible = FALSE;

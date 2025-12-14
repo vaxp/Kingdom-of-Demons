@@ -34,28 +34,13 @@ static void handle_method_call(
     
     // Show or Toggle when hidden
     if (g_strcmp0(m, "Show") == 0 || (g_strcmp0(m, "Toggle") == 0 && !state->visible)) {
-        gtk_entry_set_text(GTK_ENTRY(state->search_entry), "");
-        
-        // Center on screen
-        GdkDisplay *display = gdk_display_get_default();
-        GdkMonitor *monitor = gdk_display_get_primary_monitor(display);
-        GdkRectangle geo;
-        gdk_monitor_get_geometry(monitor, &geo);
-        int x = geo.x + (geo.width - 300) / 2;
-        int y = geo.y + geo.height / 3;
-        
-        gtk_window_move(GTK_WINDOW(state->window), x, y);
-        gtk_widget_show_all(state->window);
-        gtk_window_present(GTK_WINDOW(state->window));
-        gtk_widget_grab_focus(state->search_entry);
-        state->visible = TRUE;
+        extern void window_show(void);
+        window_show();
     }
     // Hide or Toggle when visible
     else if (g_strcmp0(m, "Hide") == 0 || (g_strcmp0(m, "Toggle") == 0 && state->visible)) {
-        extern void dropdown_hide(void);
-        dropdown_hide();
-        gtk_widget_hide(state->window);
-        state->visible = FALSE;
+        extern void window_hide(void);
+        window_hide();
     }
     // Search
     else if (g_strcmp0(m, "Search") == 0) {
@@ -63,19 +48,8 @@ static void handle_method_call(
         g_variant_get(p, "(&s)", &query);
         
         gtk_entry_set_text(GTK_ENTRY(state->search_entry), query);
-        
-        GdkDisplay *display = gdk_display_get_default();
-        GdkMonitor *monitor = gdk_display_get_primary_monitor(display);
-        GdkRectangle geo;
-        gdk_monitor_get_geometry(monitor, &geo);
-        int x = geo.x + (geo.width - 300) / 2;
-        int y = geo.y + geo.height / 3;
-        
-        gtk_window_move(GTK_WINDOW(state->window), x, y);
-        gtk_widget_show_all(state->window);
-        gtk_window_present(GTK_WINDOW(state->window));
-        gtk_widget_grab_focus(state->search_entry);
-        state->visible = TRUE;
+        extern void window_show(void);
+        window_show();
     }
     
     g_dbus_method_invocation_return_value(inv, NULL);
@@ -143,18 +117,8 @@ int main(int argc, char *argv[]) {
     }
     
     if (show_on_start) {
-        GdkDisplay *display = gdk_display_get_default();
-        GdkMonitor *monitor = gdk_display_get_primary_monitor(display);
-        GdkRectangle geo;
-        gdk_monitor_get_geometry(monitor, &geo);
-        int x = geo.x + (geo.width - 300) / 2;
-        int y = geo.y + geo.height / 3;
-        
-        gtk_window_move(GTK_WINDOW(state->window), x, y);
-        gtk_widget_show_all(state->window);
-        gtk_window_present(GTK_WINDOW(state->window));
-        gtk_widget_grab_focus(state->search_entry);
-        state->visible = TRUE;
+        extern void window_show(void);
+        window_show();
     }
     
     g_print("✅ Ready. Use D-Bus Toggle or --show\n");

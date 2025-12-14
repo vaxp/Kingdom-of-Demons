@@ -28,12 +28,26 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-# Stop service
-echo -e "${YELLOW}🛑 Stopping running instances...${NC}"
+# Stop and remove old service
+echo -e "${YELLOW}🛑 Stopping and removing old service...${NC}"
 REAL_USER="${SUDO_USER:-$USER}"
 USER_ID=$(id -u "$REAL_USER")
+
+# Stop service if running
 su - "$REAL_USER" -c "export XDG_RUNTIME_DIR=/run/user/$USER_ID; systemctl --user stop $SERVICE_NAME 2>/dev/null" || true
+echo -e "  ${GREEN}✓${NC} Service stopped"
+
+# Disable service if enabled
+su - "$REAL_USER" -c "export XDG_RUNTIME_DIR=/run/user/$USER_ID; systemctl --user disable $SERVICE_NAME 2>/dev/null" || true
+echo -e "  ${GREEN}✓${NC} Service disabled"
+
+# Kill any running processes
 pkill -9 $DAEMON_NAME 2>/dev/null || true
+
+# Remove old files
+rm -f /usr/bin/$DAEMON_NAME 2>/dev/null || true
+rm -f /usr/lib/systemd/user/$SERVICE_NAME 2>/dev/null || true
+echo -e "  ${GREEN}✓${NC} Old files removed"
 
 # Install binary
 echo -e "${YELLOW}📦 Installing binary...${NC}"
@@ -45,12 +59,11 @@ echo -e "${YELLOW}📄 Installing service file...${NC}"
 install -Dm644 "$SCRIPT_DIR/$SERVICE_NAME" "/usr/lib/systemd/user/$SERVICE_NAME"
 echo -e "  ${GREEN}✓${NC} /usr/lib/systemd/user/$SERVICE_NAME"
 
-# Enable service
-echo -e "${YELLOW}🔄 Enabling service for user: ${REAL_USER}${NC}"
+# Reload systemd (session manager handles enable/start)
+echo -e "${YELLOW}🔄 Reloading systemd for user: ${REAL_USER}${NC}"
 export XDG_RUNTIME_DIR="/run/user/$USER_ID"
 su - "$REAL_USER" -c "export XDG_RUNTIME_DIR=/run/user/$USER_ID; systemctl --user daemon-reload"
-su - "$REAL_USER" -c "export XDG_RUNTIME_DIR=/run/user/$USER_ID; systemctl --user enable $SERVICE_NAME"
-su - "$REAL_USER" -c "export XDG_RUNTIME_DIR=/run/user/$USER_ID; systemctl --user start $SERVICE_NAME"
+echo -e "  ${GREEN}✓${NC} Service registered (venom-session will manage activation)"
 
 echo ""
 echo -e "${GREEN}✅ Venom Basilisk installed successfully!${NC}"
