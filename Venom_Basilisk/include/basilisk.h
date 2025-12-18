@@ -26,7 +26,7 @@
 #define WINDOW_HEIGHT 500
 #define GRID_COLS 5
 #define GRID_ROWS 3
-#define ICON_SIZE 48
+#define ICON_SIZE 64
 
 // Categories
 typedef enum {

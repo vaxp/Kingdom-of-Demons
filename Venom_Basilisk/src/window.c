@@ -33,7 +33,7 @@ static const gchar *css_data =
     /* Search entry - cyan border */
     "#search-entry {"
     "  background-color: transparent;"
-    "  border: 2px solid #00ffcc;"
+    "  border: 1px solid #00ffcc;"
     "  border-radius: 8px;"
     "  color: #ffffff;"
     "  font-size: 16px;"
@@ -47,15 +47,14 @@ static const gchar *css_data =
     /* App buttons */
     ".app-button {"
     "  background-color: transparent;"
-    "  border: 2px solid rgba(100,100,120,0.5);"
-    "  border-radius: 12px;"
-    "  padding: 8px;"
-    "  min-width: 80px;"
-    "  min-height: 80px;"
+    "  border: none;"
+    "  border-radius: 8px;"
+    "  padding: 2px;"
+    "  min-width: 90px;"
+    "  min-height: 90px;"
     "}"
     ".app-button:hover {"
-    "  background-color: rgba(0,255,200,0.15);"
-    "  border-color: #00ffcc;"
+    "  background-color: rgba(0, 255, 200, 0.06);"
     "}"
     
     /* Colored borders for variety */
