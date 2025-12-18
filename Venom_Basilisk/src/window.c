@@ -1,6 +1,6 @@
 /*
  * ═══════════════════════════════════════════════════════════════════════════
- * 🖼️ Venom Basilisk - Window Module (With Dropdown Results)
+ * 🖼️ Venom Basilisk - Window Module (Neon Grid Launcher)
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
@@ -10,22 +10,108 @@
 
 extern BasiliskState *state;
 
-static GtkWidget *dropdown_window = NULL;
-
 // ═══════════════════════════════════════════════════════════════════════════
-// CSS
+// CSS - Clean design, no shadows (compositor handles effects)
 // ═══════════════════════════════════════════════════════════════════════════
 
 static const gchar *css_data = 
     "* { padding: 0; margin: 0; }"
     "window, .background { background-color: transparent; }"
-    "#basilisk-main { background: rgba(30,30,35,0.95); border-radius: 8px; padding: 4px; }"
-    "#search-entry { background: transparent; border: none; color: white; font-size: 14px; }"
-    "#dropdown { background: rgba(25,25,30,0.98); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }"
-    ".result-row { padding: 8px 12px; background: transparent; border: none; }"
-    ".result-row:hover { background: rgba(0,212,255,0.2); }"
-    ".result-name { font-size: 13px; color: white; }"
-    ".hint-label { color: #888; font-size: 12px; padding: 8px; }";
+    
+    /* Main container - dark with colored border */
+    "#main-container {"
+    "  background: rgba(0, 0, 0, 0);"
+    "  border: 2px solid rgba(0, 255, 200, 0.6);"
+    "  border-radius: 16px;"
+    "  padding: 20px;"
+    "}"
+    
+    /* Search entry - cyan border */
+    "#search-entry {"
+    "  background: rgba(0, 0, 0, 0);"
+    "  border: 2px solid #00ffcc;"
+    "  border-radius: 8px;"
+    "  color: white;"
+    "  font-size: 16px;"
+    "  padding: 12px 16px;"
+    "  min-height: 20px;"
+    "}"
+    "#search-entry:focus {"
+    "  border-color: #00ff88;"
+    "}"
+    
+    /* App buttons */
+    ".app-button {"
+    "  background: rgba(30, 30, 40, 0.8);"
+    "  border: 2px solid rgba(100, 100, 120, 0.5);"
+    "  border-radius: 12px;"
+    "  padding: 8px;"
+    "  min-width: 80px;"
+    "  min-height: 80px;"
+    "}"
+    ".app-button:hover {"
+    "  background: rgba(0, 255, 200, 0.15);"
+    "  border-color: #00ffcc;"
+    "}"
+    
+    /* Colored borders for variety */
+    ".app-button.color-cyan { border-color: #00ffcc; }"
+    ".app-button.color-pink { border-color: #ff00aa; }"
+    ".app-button.color-purple { border-color: #aa00ff; }"
+    ".app-button.color-green { border-color: #00ff66; }"
+    ".app-button.color-blue { border-color: #0088ff; }"
+    
+    /* App icon and name */
+    ".app-icon { margin-bottom: 4px; }"
+    ".app-name {"
+    "  color: white;"
+    "  font-size: 11px;"
+    "  font-weight: 500;"
+    "}"
+    
+    /* Category tabs */
+    ".category-button {"
+    "  background: transparent;"
+    "  border: none;"
+    "  border-bottom: 3px solid transparent;"
+    "  color: #888888;"
+    "  font-size: 13px;"
+    "  padding: 8px 16px;"
+    "  min-width: 80px;"
+    "}"
+    ".category-button:hover {"
+    "  color: #cccccc;"
+    "}"
+    ".category-button.active {"
+    "  color: white;"
+    "  border-bottom-color: #00ffcc;"
+    "}"
+    ".category-button.cat-dev.active { border-bottom-color: #00ff66; }"
+    ".category-button.cat-sys.active { border-bottom-color: #aa00ff; }"
+    ".category-button.cat-net.active { border-bottom-color: #ff00aa; }"
+    ".category-button.cat-util.active { border-bottom-color: #0088ff; }"
+    ".category-button.cat-other.active { border-bottom-color: #ffaa00; }"
+    
+    /* Scrolled window */
+    "scrolledwindow { background: transparent; }"
+    "scrolledwindow viewport { background: transparent; }";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Globals
+// ═══════════════════════════════════════════════════════════════════════════
+
+static GtkWidget *category_buttons[CAT_COUNT];
+static const gchar *color_classes[] = {"color-cyan", "color-pink", "color-purple", "color-green", "color-blue"};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Forward declarations
+// ═══════════════════════════════════════════════════════════════════════════
+
+void window_refresh_grid(void);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CSS Application
+// ═══════════════════════════════════════════════════════════════════════════
 
 void window_apply_css(void) {
     GtkCssProvider *provider = gtk_css_provider_new();
@@ -39,43 +125,174 @@ void window_apply_css(void) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Dropdown Window
+// App Button Creation
 // ═══════════════════════════════════════════════════════════════════════════
 
-void dropdown_show(void) {
-    if (!dropdown_window) {
-        dropdown_window = gtk_window_new(GTK_WINDOW_POPUP);
-        gtk_widget_set_name(dropdown_window, "dropdown");
-        gtk_window_set_decorated(GTK_WINDOW(dropdown_window), FALSE);
-        gtk_window_set_skip_taskbar_hint(GTK_WINDOW(dropdown_window), TRUE);
-        gtk_window_set_keep_above(GTK_WINDOW(dropdown_window), TRUE);
-        
-        GdkScreen *screen = gtk_widget_get_screen(dropdown_window);
-        GdkVisual *visual = gdk_screen_get_rgba_visual(screen);
-        if (visual) gtk_widget_set_visual(dropdown_window, visual);
-        gtk_widget_set_app_paintable(dropdown_window, TRUE);
-        
-        // Results box directly (no scroll) - fixed width 300px
-        state->results_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-        gtk_widget_set_size_request(state->results_box, 300, -1);
-        gtk_container_add(GTK_CONTAINER(dropdown_window), state->results_box);
-        gtk_widget_set_size_request(dropdown_window, 300, -1);
+static void on_app_clicked(GtkButton *button, gpointer data) {
+    (void)button;
+    const gchar *desktop_file = (const gchar *)data;
+    
+    GDesktopAppInfo *app_info = g_desktop_app_info_new_from_filename(desktop_file);
+    if (app_info) {
+        g_app_info_launch(G_APP_INFO(app_info), NULL, NULL, NULL);
+        g_object_unref(app_info);
     }
     
-    // Position below search entry - same width as search (300px)
-    gint x, y, h;
-    gtk_window_get_position(GTK_WINDOW(state->window), &x, &y);
-    gtk_window_get_size(GTK_WINDOW(state->window), NULL, &h);
-    gtk_window_move(GTK_WINDOW(dropdown_window), x, y + h + 4);
-    gtk_widget_set_size_request(dropdown_window, 300, -1);
-    
-    gtk_widget_show_all(dropdown_window);
+    window_hide();
 }
 
-void dropdown_hide(void) {
-    if (dropdown_window) {
-        gtk_widget_hide(dropdown_window);
+static GtkWidget* create_app_button(AppEntry *app, int index) {
+    GtkWidget *button = gtk_button_new();
+    gtk_widget_set_name(button, "app-button");
+    GtkStyleContext *ctx = gtk_widget_get_style_context(button);
+    gtk_style_context_add_class(ctx, "app-button");
+    
+    // Add color class based on index
+    gtk_style_context_add_class(ctx, color_classes[index % 5]);
+    
+    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+    gtk_widget_set_halign(vbox, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(vbox, GTK_ALIGN_CENTER);
+    gtk_container_add(GTK_CONTAINER(button), vbox);
+    
+    // Icon
+    GtkWidget *icon = NULL;
+    if (app->icon) {
+        GtkIconTheme *theme = gtk_icon_theme_get_default();
+        if (g_path_is_absolute(app->icon)) {
+            GdkPixbuf *pb = gdk_pixbuf_new_from_file_at_scale(app->icon, ICON_SIZE, ICON_SIZE, TRUE, NULL);
+            if (pb) {
+                icon = gtk_image_new_from_pixbuf(pb);
+                g_object_unref(pb);
+            }
+        } else {
+            GdkPixbuf *pb = gtk_icon_theme_load_icon(theme, app->icon, ICON_SIZE, GTK_ICON_LOOKUP_FORCE_SIZE, NULL);
+            if (pb) {
+                icon = gtk_image_new_from_pixbuf(pb);
+                g_object_unref(pb);
+            }
+        }
     }
+    if (!icon) {
+        icon = gtk_image_new_from_icon_name("application-x-executable", GTK_ICON_SIZE_DIALOG);
+        gtk_image_set_pixel_size(GTK_IMAGE(icon), ICON_SIZE);
+    }
+    gtk_style_context_add_class(gtk_widget_get_style_context(icon), "app-icon");
+    gtk_box_pack_start(GTK_BOX(vbox), icon, FALSE, FALSE, 0);
+    
+    // Name (truncated)
+    gchar *short_name = g_strndup(app->name, 12);
+    if (strlen(app->name) > 12) {
+        gchar *tmp = g_strdup_printf("%s..", short_name);
+        g_free(short_name);
+        short_name = tmp;
+    }
+    GtkWidget *label = gtk_label_new(short_name);
+    gtk_style_context_add_class(gtk_widget_get_style_context(label), "app-name");
+    gtk_label_set_ellipsize(GTK_LABEL(label), PANGO_ELLIPSIZE_END);
+    gtk_label_set_max_width_chars(GTK_LABEL(label), 10);
+    gtk_box_pack_start(GTK_BOX(vbox), label, FALSE, FALSE, 0);
+    g_free(short_name);
+    
+    g_signal_connect(button, "clicked", G_CALLBACK(on_app_clicked), app->desktop_file);
+    
+    return button;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Category Handling
+// ═══════════════════════════════════════════════════════════════════════════
+
+static void on_category_clicked(GtkButton *button, gpointer data) {
+    AppCategory cat = GPOINTER_TO_INT(data);
+    state->current_category = cat;
+    
+    // Update button styles
+    for (int i = 0; i < CAT_COUNT; i++) {
+        GtkStyleContext *ctx = gtk_widget_get_style_context(category_buttons[i]);
+        if (i == (int)cat) {
+            gtk_style_context_add_class(ctx, "active");
+        } else {
+            gtk_style_context_remove_class(ctx, "active");
+        }
+    }
+    
+    // Refresh grid
+    window_refresh_grid();
+    
+    (void)button;
+}
+
+static GtkWidget* create_category_bar(void) {
+    GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_halign(hbox, GTK_ALIGN_CENTER);
+    gtk_widget_set_margin_top(hbox, 15);
+    
+    const gchar *names[] = {"All", "Development", "System", "Internet", "Utility", "Other"};
+    const gchar *cat_classes[] = {"cat-all", "cat-dev", "cat-sys", "cat-net", "cat-util", "cat-other"};
+    
+    for (int i = 0; i < CAT_COUNT; i++) {
+        GtkWidget *btn = gtk_button_new_with_label(names[i]);
+        gtk_widget_set_name(btn, "category-button");
+        GtkStyleContext *ctx = gtk_widget_get_style_context(btn);
+        gtk_style_context_add_class(ctx, "category-button");
+        gtk_style_context_add_class(ctx, cat_classes[i]);
+        
+        if (i == 0) {
+            gtk_style_context_add_class(ctx, "active");
+        }
+        
+        g_signal_connect(btn, "clicked", G_CALLBACK(on_category_clicked), GINT_TO_POINTER(i));
+        gtk_box_pack_start(GTK_BOX(hbox), btn, FALSE, FALSE, 0);
+        
+        category_buttons[i] = btn;
+    }
+    
+    return hbox;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Grid Refresh
+// ═══════════════════════════════════════════════════════════════════════════
+
+void window_refresh_grid(void) {
+    // Clear existing children
+    GList *children = gtk_container_get_children(GTK_CONTAINER(state->app_grid));
+    for (GList *l = children; l != NULL; l = l->next) {
+        gtk_widget_destroy(GTK_WIDGET(l->data));
+    }
+    g_list_free(children);
+    
+    // Get search text
+    const gchar *search_text = gtk_entry_get_text(GTK_ENTRY(state->search_entry));
+    gchar *lower_search = search_text && strlen(search_text) > 0 ? g_utf8_strdown(search_text, -1) : NULL;
+    
+    int count = 0;
+    int max_apps = GRID_COLS * GRID_ROWS;
+    
+    for (GList *l = state->app_cache; l != NULL && count < max_apps; l = l->next) {
+        AppEntry *app = (AppEntry *)l->data;
+        
+        // Category filter
+        if (state->current_category != CAT_ALL && app->category != state->current_category) {
+            continue;
+        }
+        
+        // Search filter
+        if (lower_search) {
+            gchar *lower_name = g_utf8_strdown(app->name, -1);
+            gboolean match = strstr(lower_name, lower_search) != NULL;
+            g_free(lower_name);
+            if (!match) continue;
+        }
+        
+        GtkWidget *btn = create_app_button(app, count);
+        gtk_grid_attach(GTK_GRID(state->app_grid), btn, count % GRID_COLS, count / GRID_COLS, 1, 1);
+        count++;
+    }
+    
+    g_free(lower_search);
+    gtk_widget_show_all(state->app_grid);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -86,7 +303,6 @@ static gboolean on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer dat
     (void)widget; (void)data;
     
     if (event->keyval == GDK_KEY_Escape) {
-        dropdown_hide();
         window_hide();
         return TRUE;
     }
@@ -103,15 +319,8 @@ static gboolean on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer dat
 }
 
 static void on_search_changed(GtkEditable *editable, gpointer data) {
-    (void)data;
-    const gchar *text = gtk_entry_get_text(GTK_ENTRY(editable));
-    
-    if (text && strlen(text) >= 1) {
-        search_perform(text);
-    } else {
-        search_clear_results();
-        dropdown_hide();
-    }
+    (void)editable; (void)data;
+    window_refresh_grid();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -121,88 +330,99 @@ static void on_search_changed(GtkEditable *editable, gpointer data) {
 void window_init(void) {
     window_apply_css();
     
-    // Main Window - Just the search bar
+    // Main Window
     state->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(state->window), "Basilisk");
+    gtk_window_set_title(GTK_WINDOW(state->window), "Venom Basilisk");
     gtk_window_set_decorated(GTK_WINDOW(state->window), FALSE);
     gtk_window_set_skip_taskbar_hint(GTK_WINDOW(state->window), TRUE);
     gtk_window_set_skip_pager_hint(GTK_WINDOW(state->window), TRUE);
     gtk_window_set_type_hint(GTK_WINDOW(state->window), GDK_WINDOW_TYPE_HINT_DIALOG);
-    gtk_window_set_keep_above(GTK_WINDOW(state->window), TRUE);  // Always on top
+    gtk_window_set_keep_above(GTK_WINDOW(state->window), TRUE);
     gtk_widget_set_app_paintable(state->window, TRUE);
+    gtk_window_set_default_size(GTK_WINDOW(state->window), WINDOW_WIDTH, WINDOW_HEIGHT);
+    gtk_window_set_resizable(GTK_WINDOW(state->window), FALSE);
     
+    // Transparency
     GdkScreen *screen = gtk_widget_get_screen(state->window);
     GdkVisual *visual = gdk_screen_get_rgba_visual(screen);
     if (visual) gtk_widget_set_visual(state->window, visual);
     
-    // Main Box
-    GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_widget_set_name(main_box, "basilisk-main");
+    // Main container
+    GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
+    gtk_widget_set_name(main_box, "main-container");
     gtk_container_add(GTK_CONTAINER(state->window), main_box);
     
-    // Search Entry ONLY - compact size
+    // Search entry
     state->search_entry = gtk_entry_new();
     gtk_widget_set_name(state->search_entry, "search-entry");
-    gtk_entry_set_placeholder_text(GTK_ENTRY(state->search_entry), "Search...");
-    gtk_widget_set_size_request(state->search_entry, 335, 28);
+    gtk_entry_set_placeholder_text(GTK_ENTRY(state->search_entry), "Search Venom Apps...");
     gtk_box_pack_start(GTK_BOX(main_box), state->search_entry, FALSE, FALSE, 0);
     
-    // Set window size to match entry only
-    gtk_window_set_default_size(GTK_WINDOW(state->window), 300, -1);
-    gtk_window_set_resizable(GTK_WINDOW(state->window), FALSE);
+    // Scrolled window for app grid
+    state->scroll_window = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(state->scroll_window), 
+                                   GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+    gtk_widget_set_vexpand(state->scroll_window, TRUE);
+    gtk_box_pack_start(GTK_BOX(main_box), state->scroll_window, TRUE, TRUE, 0);
+    
+    // App grid
+    state->app_grid = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID(state->app_grid), 15);
+    gtk_grid_set_column_spacing(GTK_GRID(state->app_grid), 15);
+    gtk_widget_set_halign(state->app_grid, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(state->app_grid, GTK_ALIGN_START);
+    gtk_widget_set_margin_top(state->app_grid, 10);
+    gtk_container_add(GTK_CONTAINER(state->scroll_window), state->app_grid);
+    
+    // Category bar
+    state->category_bar = create_category_bar();
+    gtk_box_pack_end(GTK_BOX(main_box), state->category_bar, FALSE, FALSE, 0);
     
     // Signals
     g_signal_connect(state->window, "key-press-event", G_CALLBACK(on_key_press), NULL);
     g_signal_connect(state->search_entry, "changed", G_CALLBACK(on_search_changed), NULL);
-    
-    // Prevent window from being destroyed - just hide it
     g_signal_connect(state->window, "delete-event", G_CALLBACK(gtk_widget_hide_on_delete), NULL);
     
-    // Window is ready - no override_redirect needed, just keep_above
-    
     state->visible = FALSE;
-    state->results_scroll = NULL;
-    state->results_box = NULL;
+    state->current_category = CAT_ALL;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Keyboard Grab (delayed for D-Bus calls)
+// Show / Hide
 // ═══════════════════════════════════════════════════════════════════════════
-
-static gboolean do_keyboard_grab(gpointer data) {
-    (void)data;
-    
-    GdkWindow *gdk_win = gtk_widget_get_window(state->window);
-    if (gdk_win && gtk_widget_get_visible(state->window)) {
-        GdkDisplay *display = gdk_window_get_display(gdk_win);
-        GdkSeat *seat = gdk_display_get_default_seat(display);
-        gdk_seat_grab(seat, gdk_win, GDK_SEAT_CAPABILITY_KEYBOARD, TRUE, NULL, NULL, NULL, NULL);
-        gtk_widget_grab_focus(state->search_entry);
-    }
-    
-    return FALSE; // Run only once
-}
 
 void window_show(void) {
     if (!state->visible) {
         gtk_entry_set_text(GTK_ENTRY(state->search_entry), "");
-        search_clear_results();
-        dropdown_hide();
+        state->current_category = CAT_ALL;
+        
+        // Reset category button styles
+        for (int i = 0; i < CAT_COUNT; i++) {
+            GtkStyleContext *ctx = gtk_widget_get_style_context(category_buttons[i]);
+            if (i == 0) {
+                gtk_style_context_add_class(ctx, "active");
+            } else {
+                gtk_style_context_remove_class(ctx, "active");
+            }
+        }
+        
+        window_refresh_grid();
         
         // Center on screen
-        GdkScreen *screen = gdk_screen_get_default();
-        gint sw = gdk_screen_get_width(screen);
-        gint sh = gdk_screen_get_height(screen);
-        gint x = (sw - 300) / 2;
-        gint y = sh / 3;
+        GdkDisplay *display = gdk_display_get_default();
+        GdkMonitor *monitor = gdk_display_get_primary_monitor(display);
+        GdkRectangle geometry;
+        gdk_monitor_get_geometry(monitor, &geometry);
+        
+        gint x = geometry.x + (geometry.width - WINDOW_WIDTH) / 2;
+        gint y = geometry.y + (geometry.height - WINDOW_HEIGHT) / 3;
         
         gtk_window_move(GTK_WINDOW(state->window), x, y);
         gtk_widget_show_all(state->window);
         gtk_window_present(GTK_WINDOW(state->window));
         
-        // Delay keyboard grab to ensure window is fully mapped (fixes D-Bus Toggle)
-        // Use timeout instead of idle to give X11 time to process the window
-        g_timeout_add(50, do_keyboard_grab, NULL);
+        // Focus search entry
+        g_timeout_add(50, (GSourceFunc)gtk_widget_grab_focus, state->search_entry);
         
         state->visible = TRUE;
     }
@@ -210,15 +430,6 @@ void window_show(void) {
 
 void window_hide(void) {
     if (state->visible) {
-        // Ungrab keyboard before hiding
-        GdkWindow *gdk_win = gtk_widget_get_window(state->window);
-        if (gdk_win) {
-            GdkDisplay *display = gdk_window_get_display(gdk_win);
-            GdkSeat *seat = gdk_display_get_default_seat(display);
-            gdk_seat_ungrab(seat);
-        }
-        
-        dropdown_hide();
         gtk_widget_hide(state->window);
         state->visible = FALSE;
     }
@@ -231,3 +442,7 @@ void window_toggle(void) {
         window_show();
     }
 }
+
+// Not needed anymore but keep for compatibility
+void dropdown_show(void) {}
+void dropdown_hide(void) {}

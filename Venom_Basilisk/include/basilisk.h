@@ -21,10 +21,23 @@
 #define DBUS_PATH "/org/venom/Basilisk"
 #define DBUS_INTERFACE "org.venom.Basilisk"
 
-// Window
-#define WINDOW_WIDTH 350
-#define WINDOW_HEIGHT -1
-#define RESULTS_HEIGHT 200
+// Window dimensions
+#define WINDOW_WIDTH 650
+#define WINDOW_HEIGHT 500
+#define GRID_COLS 5
+#define GRID_ROWS 3
+#define ICON_SIZE 48
+
+// Categories
+typedef enum {
+    CAT_ALL = 0,
+    CAT_DEVELOPMENT,
+    CAT_SYSTEM,
+    CAT_INTERNET,
+    CAT_UTILITY,
+    CAT_OTHER,
+    CAT_COUNT
+} AppCategory;
 
 // App Entry
 typedef struct {
@@ -32,20 +45,24 @@ typedef struct {
     gchar *exec;
     gchar *icon;
     gchar *desktop_file;
+    AppCategory category;
 } AppEntry;
 
 // Global state
 typedef struct {
     GtkWidget *window;
     GtkWidget *search_entry;
-    GtkWidget *results_box;
-    GtkWidget *results_scroll;
+    GtkWidget *app_grid;
+    GtkWidget *category_bar;
+    GtkWidget *scroll_window;
     GDBusConnection *dbus_conn;
     guint dbus_owner_id;
     GList *app_cache;
     gboolean visible;
+    AppCategory current_category;
 } BasiliskState;
 
 extern BasiliskState *state;
 
 #endif
+
