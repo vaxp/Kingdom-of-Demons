@@ -158,14 +158,7 @@ void window_init(void) {
     // Prevent window from being destroyed - just hide it
     g_signal_connect(state->window, "delete-event", G_CALLBACK(gtk_widget_hide_on_delete), NULL);
     
-    // IMPORTANT: Realize the window to keep GTK running
-    gtk_widget_realize(state->window);
-    
-    // Set override_redirect to bypass window manager
-    GdkWindow *gdk_win = gtk_widget_get_window(state->window);
-    if (gdk_win) {
-        gdk_window_set_override_redirect(gdk_win, TRUE);
-    }
+    // Window is ready - no override_redirect needed, just keep_above
     
     state->visible = FALSE;
     state->results_scroll = NULL;
@@ -207,8 +200,9 @@ void window_show(void) {
         gtk_widget_show_all(state->window);
         gtk_window_present(GTK_WINDOW(state->window));
         
-        // Delay keyboard grab to ensure window is mapped (fixes D-Bus Toggle)
-        g_idle_add(do_keyboard_grab, NULL);
+        // Delay keyboard grab to ensure window is fully mapped (fixes D-Bus Toggle)
+        // Use timeout instead of idle to give X11 time to process the window
+        g_timeout_add(50, do_keyboard_grab, NULL);
         
         state->visible = TRUE;
     }
