@@ -42,6 +42,8 @@ static const gchar *css_data =
     "}"
     "#search-entry:focus {"
     "  border-color: #00ff88;"
+    "  outline: none;"
+    "  box-shadow: none;"
     "}"
     
     /* App buttons */
@@ -414,7 +416,7 @@ void window_show(void) {
         gdk_monitor_get_geometry(monitor, &geometry);
         
         gint x = geometry.x + (geometry.width - WINDOW_WIDTH) / 2;
-        gint y = geometry.y + (geometry.height - WINDOW_HEIGHT) / 3;
+        gint y = geometry.y + (geometry.height - WINDOW_HEIGHT) / 2;
         
         gtk_window_move(GTK_WINDOW(state->window), x, y);
         gtk_widget_show_all(state->window);
