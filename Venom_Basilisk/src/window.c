@@ -15,23 +15,27 @@ extern BasiliskState *state;
 // ═══════════════════════════════════════════════════════════════════════════
 
 static const gchar *css_data = 
-    "* { padding: 0; margin: 0; }"
-    "window, .background { background-color: transparent; }"
+    "* { background-color: transparent; padding: 0; margin: 0; }"
+    "window { background-color: transparent; }"
+    "box { background-color: transparent; }"
+    "grid { background-color: transparent; }"
+    "viewport { background-color: transparent; }"
+    "scrolledwindow { background-color: transparent; }"
     
-    /* Main container - dark with colored border */
+    /* Main container - transparent with colored border */
     "#main-container {"
-    "  background: rgba(0, 0, 0, 0);"
-    "  border: 2px solid rgba(0, 255, 200, 0.6);"
+    "  background-color: transparent;"
+    "  border: 2px solid rgba(0,255,200,0.6);"
     "  border-radius: 16px;"
     "  padding: 20px;"
     "}"
     
     /* Search entry - cyan border */
     "#search-entry {"
-    "  background: rgba(0, 0, 0, 0);"
+    "  background-color: transparent;"
     "  border: 2px solid #00ffcc;"
     "  border-radius: 8px;"
-    "  color: white;"
+    "  color: #ffffff;"
     "  font-size: 16px;"
     "  padding: 12px 16px;"
     "  min-height: 20px;"
@@ -42,15 +46,15 @@ static const gchar *css_data =
     
     /* App buttons */
     ".app-button {"
-    "  background: rgba(30, 30, 40, 0.8);"
-    "  border: 2px solid rgba(100, 100, 120, 0.5);"
+    "  background-color: transparent;"
+    "  border: 2px solid rgba(100,100,120,0.5);"
     "  border-radius: 12px;"
     "  padding: 8px;"
     "  min-width: 80px;"
     "  min-height: 80px;"
     "}"
     ".app-button:hover {"
-    "  background: rgba(0, 255, 200, 0.15);"
+    "  background-color: rgba(0,255,200,0.15);"
     "  border-color: #00ffcc;"
     "}"
     
@@ -64,14 +68,14 @@ static const gchar *css_data =
     /* App icon and name */
     ".app-icon { margin-bottom: 4px; }"
     ".app-name {"
-    "  color: white;"
+    "  color: #ffffff;"
     "  font-size: 11px;"
     "  font-weight: 500;"
     "}"
     
     /* Category tabs */
     ".category-button {"
-    "  background: transparent;"
+    "  background-color: transparent;"
     "  border: none;"
     "  border-bottom: 3px solid transparent;"
     "  color: #888888;"
@@ -83,18 +87,14 @@ static const gchar *css_data =
     "  color: #cccccc;"
     "}"
     ".category-button.active {"
-    "  color: white;"
+    "  color: #ffffff;"
     "  border-bottom-color: #00ffcc;"
     "}"
     ".category-button.cat-dev.active { border-bottom-color: #00ff66; }"
     ".category-button.cat-sys.active { border-bottom-color: #aa00ff; }"
     ".category-button.cat-net.active { border-bottom-color: #ff00aa; }"
     ".category-button.cat-util.active { border-bottom-color: #0088ff; }"
-    ".category-button.cat-other.active { border-bottom-color: #ffaa00; }"
-    
-    /* Scrolled window */
-    "scrolledwindow { background: transparent; }"
-    "scrolledwindow viewport { background: transparent; }";
+    ".category-button.cat-other.active { border-bottom-color: #ffaa00; }";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Globals
