@@ -3,8 +3,8 @@
 # ═══════════════════════════════════════════════════════════════════════════
 
 CC = gcc
-CFLAGS = -Wall -Wextra -O2 $(shell pkg-config --cflags gtk+-3.0)
-LDFLAGS = $(shell pkg-config --libs gtk+-3.0) -lX11 -lm
+CFLAGS = -Wall -Wextra -O2 $(shell pkg-config --cflags gtk+-3.0 libpulse libpulse-mainloop-glib x11 xrandr)
+LDFLAGS = $(shell pkg-config --libs gtk+-3.0 libpulse libpulse-mainloop-glib x11 xrandr) -lm
 
 TARGET = venom_osd
 SRC = venom_osd.c
