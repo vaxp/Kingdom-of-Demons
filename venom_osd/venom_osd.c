@@ -258,7 +258,7 @@ gboolean on_draw(GtkWidget *widget, cairo_t *cr, gpointer data) {
     double radius = 20.0;
 
     // رسم الخلفية
-    cairo_set_source_rgba(cr, 0.1, 0.1, 0.1, 0.85);
+    cairo_set_source_rgba(cr, 0.1, 0.1, 0.1, 0.0);
     draw_rounded_rect(cr, x, y, w, h, radius);
     cairo_fill(cr);
 
