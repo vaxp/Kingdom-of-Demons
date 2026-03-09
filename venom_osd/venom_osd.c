@@ -41,8 +41,8 @@ int current_group_index = -1;
 // حالة OSD الحالية
 OsdType current_osd_type = OSD_KEYBOARD;
 char current_text[10] = "";
-int current_volume = 0;
-int is_muted = 0;
+int current_volume = -1;
+int is_muted = -1;
 int current_brightness = 0;
 
 // PulseAudio
@@ -72,12 +72,19 @@ void sink_info_cb(pa_context *c, const pa_sink_info *i, int eol, void *userdata)
     int vol = (pa_cvolume_avg(&cv) * 100) / PA_VOLUME_NORM;
     if (vol > 100) vol = 100;
     
+    int changed = 0;
+    if (current_volume != -1 && (current_volume != vol || is_muted != i->mute)) {
+        changed = 1;
+    }
+    
     current_volume = vol;
     is_muted = i->mute;
     
-    current_osd_type = OSD_VOLUME;
-    printf("[PA] Sink volume updated: %d%%, muted: %d\n", vol, is_muted);
-    show_osd();
+    if (changed) {
+        current_osd_type = OSD_VOLUME;
+        printf("[PA] Sink volume updated: %d%%, muted: %d\n", vol, is_muted);
+        show_osd();
+    }
 }
 
 void server_info_cb(pa_context *c, const pa_server_info *i, void *userdata) {
