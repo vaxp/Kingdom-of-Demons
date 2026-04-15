@@ -35,6 +35,26 @@ apt install $INTERACTIVE \
     gpg-wks-client \
     upower \
     mdadm \
+    build-essential \
+    pkg-config \
+    cmake \
+    libgtk-3-dev \
+    libgtk-layer-shell-dev \
+    libc6 \
+    libgcc-s1 \
+    libstdc++6 \
+    libx11-6 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxext6 \
+    libglib2.0-dev \
+    libpolkit-agent-1-dev \
+    libjson-glib-dev \
+    libpulse-dev \
+    libxkbregistry-dev \
+    libdbusmenu-glib-dev \
+    libgtk-3-dev \
+    libgtk-layer-shell-dev \
     appstream \
     packagekit-tools \
     python3-babel \
