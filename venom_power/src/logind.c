@@ -2,6 +2,7 @@
 #include "venom_power.h"
 #include "dbus_service.h"
 #include "idle.h"
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -44,8 +45,27 @@ gboolean logind_logout(void) {
 }
 
 gboolean logind_lock_screen(void) {
-    int ret = system(LOCK_SCREEN_CMD);
-    return (ret != -1);
+    PowerConfig *cfg = config_get();
+    const gchar *cmd = (cfg && cfg->lock_screen_cmd) ? cfg->lock_screen_cmd : LOCK_SCREEN_CMD;
+    
+    // تحليل الأمر إلى مصفوفة argv
+    gchar **argv = NULL;
+    GError *error = NULL;
+    if (!g_shell_parse_argv(cmd, NULL, &argv, &error)) {
+        fprintf(stderr, "Failed to parse lock command '%s': %s\n", cmd, error->message);
+        g_error_free(error);
+        return FALSE;
+    }
+    
+    gboolean success = g_spawn_async(NULL, argv, NULL,
+                                    G_SPAWN_SEARCH_PATH | G_SPAWN_DO_NOT_REAP_CHILD,
+                                    NULL, NULL, NULL, &error);
+    if (!success) {
+        fprintf(stderr, "Failed to launch lock screen: %s\n", error->message);
+        g_error_free(error);
+    }
+    g_strfreev(argv);
+    return success;
 }
 
 void logind_on_prepare_for_sleep(GDBusConnection *connection,
@@ -55,17 +75,16 @@ void logind_on_prepare_for_sleep(GDBusConnection *connection,
                                  const gchar *signal_name,
                                  GVariant *parameters,
                                  gpointer user_data) {
+    (void)connection; (void)sender_name; (void)object_path;
+    (void)interface_name; (void)signal_name; (void)user_data;
     gboolean start_sleeping;
     g_variant_get(parameters, "(b)", &start_sleeping);
 
     if (start_sleeping) {
-        printf("💤 System is going to sleep! Launching Venom Locker...\n");
-        int ret = system(LOCK_SCREEN_CMD);
-        if (ret == -1) {
-            fprintf(stderr, "Failed to launch lock screen\n");
-        }
+        printf("\U0001f4a4 System is going to sleep! Locking screen...\n");
+        logind_lock_screen();
     } else {
-        printf("☀️ System just woke up.\n");
+        printf("\u2600\ufe0f System just woke up.\n");
         idle_reset_timers();
     }
 }
@@ -77,6 +96,8 @@ void logind_on_properties_changed(GDBusConnection *connection,
                                   const gchar *signal_name,
                                   GVariant *parameters,
                                   gpointer user_data) {
+    (void)connection; (void)sender_name; (void)object_path;
+    (void)interface_name; (void)signal_name; (void)user_data;
     GVariant *changed_props = NULL;
     const gchar *iface = NULL;
     

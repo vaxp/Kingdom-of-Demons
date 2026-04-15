@@ -97,6 +97,8 @@ void battery_on_properties_changed(GDBusConnection *connection,
                                    const gchar *signal_name,
                                    GVariant *parameters,
                                    gpointer user_data) {
+    (void)connection; (void)sender_name; (void)object_path;
+    (void)interface_name; (void)signal_name; (void)user_data;
     GVariant *changed_props = NULL;
     const gchar *iface = NULL;
     
@@ -150,6 +152,8 @@ void battery_on_power_source_changed(GDBusConnection *connection,
                                      const gchar *signal_name,
                                      GVariant *parameters,
                                      gpointer user_data) {
+    (void)connection; (void)sender_name; (void)object_path;
+    (void)interface_name; (void)signal_name; (void)user_data;
     GVariant *changed_props = NULL;
     const gchar *iface = NULL;
     

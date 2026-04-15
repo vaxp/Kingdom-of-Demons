@@ -92,12 +92,22 @@ void backlight_dim_screen(gboolean dim) {
 }
 
 void backlight_blank_screen(gboolean blank) {
+    gchar *argv_off[] = { "xset", "dpms", "force", "off", NULL };
+    gchar *argv_on[]  = { "xset", "dpms", "force", "on",  NULL };
+    GError *error = NULL;
+
     if (blank) {
-        system("xset dpms force off 2>/dev/null");
+        if (!g_spawn_async(NULL, argv_off, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, &error)) {
+            fprintf(stderr, "xset dpms off failed: %s\n", error->message);
+            g_error_free(error);
+        }
         power_state.screen_blanked = TRUE;
         printf("🖥️ Screen blanked\n");
     } else {
-        system("xset dpms force on 2>/dev/null");
+        if (!g_spawn_async(NULL, argv_on, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, &error)) {
+            fprintf(stderr, "xset dpms on failed: %s\n", error->message);
+            g_error_free(error);
+        }
         power_state.screen_blanked = FALSE;
         printf("🖥️ Screen unblanked\n");
     }

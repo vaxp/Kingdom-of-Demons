@@ -239,8 +239,6 @@ static const gchar introspection_xml[] =
 "  </interface>"
 "</node>";
 
-#define DAEMON_VERSION "2.1.0"
-
 const gchar* dbus_get_introspection_xml(void) {
     return introspection_xml;
 }
@@ -260,10 +258,12 @@ void dbus_emit_signal(const gchar *signal_name, GVariant *params) {
 }
 
 void dbus_send_notification(const gchar *title, const gchar *body, const gchar *urgency) {
-    gchar *cmd = g_strdup_printf("notify-send -u %s '%s' '%s' 2>/dev/null", 
-                                  urgency, title, body);
-    system(cmd);
-    g_free(cmd);
+    gchar *argv[] = { "notify-send", "-u", (gchar*)urgency, (gchar*)title, (gchar*)body, NULL };
+    GError *error = NULL;
+    if (!g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, &error)) {
+        fprintf(stderr, "notify-send failed: %s\n", error->message);
+        g_error_free(error);
+    }
 }
 
 void dbus_handle_method_call(GDBusConnection *connection, const gchar *sender,
@@ -401,7 +401,14 @@ void dbus_handle_method_call(GDBusConnection *connection, const gchar *sender,
         guint dim, blank, suspend;
         g_variant_get(parameters, "(uuu)", &dim, &blank, &suspend);
         idle_set_timeouts(dim, blank, suspend);
-        printf("📨 D-Bus: SetIdleTimeouts received (dim=%u, blank=%u, suspend=%u)\n", dim, blank, suspend);
+        // حفظ تلقائي في ملف الإعدادات للاستمرارية بعد إعادة التشغيل
+        cfg->dim_timeout_ac = dim;
+        cfg->dim_timeout_battery = dim;
+        cfg->blank_timeout_ac = blank;
+        cfg->blank_timeout_battery = blank;
+        cfg->suspend_timeout_battery = suspend;
+        config_save();
+        printf("📨 D-Bus: SetIdleTimeouts saved (dim=%u, blank=%u, suspend=%u)\n", dim, blank, suspend);
         dbus_emit_signal("IdleTimeoutsChanged", g_variant_new("(uuu)", dim, blank, suspend));
         g_dbus_method_invocation_return_value(invocation, NULL);
     }
@@ -425,6 +432,7 @@ void dbus_handle_method_call(GDBusConnection *connection, const gchar *sender,
     else if (g_strcmp0(method_name, "SetBatteryLevels") == 0) {
         g_variant_get(parameters, "(uuu)", &cfg->battery_low_level,
                       &cfg->battery_critical_level, &cfg->battery_danger_level);
+        config_save();
         g_dbus_method_invocation_return_value(invocation, NULL);
     }
     // ═══════════════════════════════════════════════════════════════════════
@@ -441,6 +449,7 @@ void dbus_handle_method_call(GDBusConnection *connection, const gchar *sender,
         g_free(cfg->lid_action_battery);
         cfg->lid_action_ac = g_strdup(ac);
         cfg->lid_action_battery = g_strdup(battery);
+        config_save();
         g_dbus_method_invocation_return_value(invocation, NULL);
     }
     else if (g_strcmp0(method_name, "GetPowerButtonAction") == 0) {
@@ -452,6 +461,7 @@ void dbus_handle_method_call(GDBusConnection *connection, const gchar *sender,
         g_variant_get(parameters, "(&s)", &action);
         g_free(cfg->power_button_action);
         cfg->power_button_action = g_strdup(action);
+        config_save();
         g_dbus_method_invocation_return_value(invocation, NULL);
     }
     else if (g_strcmp0(method_name, "GetCriticalAction") == 0) {
@@ -463,6 +473,7 @@ void dbus_handle_method_call(GDBusConnection *connection, const gchar *sender,
         g_variant_get(parameters, "(&s)", &action);
         g_free(cfg->critical_action);
         cfg->critical_action = g_strdup(action);
+        config_save();
         g_dbus_method_invocation_return_value(invocation, NULL);
     }
     // ═══════════════════════════════════════════════════════════════════════

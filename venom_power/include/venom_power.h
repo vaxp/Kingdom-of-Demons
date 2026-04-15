@@ -8,7 +8,11 @@
 // 🔧 الإعدادات والثوابت
 // ═══════════════════════════════════════════════════════════════════════════
 
-#define LOCK_SCREEN_CMD "/home/x/Desktop/venomlocker/build/linux/x64/release/bundle/venomlocker &"
+#define DAEMON_VERSION "2.1.0"
+
+// المسار الافتراضي لأمر قفل الشاشة (يمكن تجاوزه من ملف الإعدادات)
+#define DEFAULT_LOCK_SCREEN_CMD   "loginctl lock-session"
+#define LOCK_SCREEN_CMD           DEFAULT_LOCK_SCREEN_CMD
 #define BACKLIGHT_PATH "/sys/class/backlight"
 
 // أوقات الخمول (بالثواني)
@@ -50,10 +54,7 @@ typedef struct {
     gboolean screen_blanked;
     gint original_brightness;
     
-    // معرفات المؤقتات
-    guint dim_timer_id;
-    guint blank_timer_id;
-    guint suspend_timer_id;
+    // (المؤقتات تُدار داخلياً في idle.c)
     
     // حالة البطارية
     gdouble battery_percentage;

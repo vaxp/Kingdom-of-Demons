@@ -146,6 +146,9 @@ gboolean config_load(void) {
         printf("⚙️ Config loaded from file\n");
     } else {
         printf("⚙️ Using default config (no config file found)\n");
+        // ✅ إنشاء ملف الإعدادات تلقائياً بالقيم الافتراضية
+        config_save();
+        printf("⚙️ Default config created at ~/.config/venom/power.conf\n");
     }
     
     g_key_file_free(keyfile);
